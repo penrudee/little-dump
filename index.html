@@ -257,6 +257,27 @@
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
+    // สร้าง Event ตรวจสอบการเชื่อมต่อ WebSocket และแสดงผลบนหน้าจอ
+    provider.on('status', event => {
+      console.log('WebRTC Status:', event.status); // connected หรือ disconnected
+        
+          // สร้าง/อัปเดตกล่อง Log บนหน้าจอมือถือ
+            let logBox = document.getElementById('debug-status');
+              if (!logBox) {
+                  logBox = document.createElement('div');
+                      logBox.id = 'debug-status';
+                          logBox.style = 'position:fixed; top:10px; left:10px; background:rgba(0,0,0,0.8); color:#fff; padding:5px 10px; border-radius:5px; font-size:12px; z-index:9999;';
+                              document.body.appendChild(logBox);
+                                }
+                                  
+                                    if (event.status === 'connected') {
+                                        logBox.innerHTML = '🟢 WS: Connected';
+                                            logBox.style.color = '#00ff00';
+                                              } else {
+                                                  logBox.innerHTML = '🔴 WS: Disconnected';
+                                                      logBox.style.color = '#ff4444';
+                                                        }
+                                                        });
   </script>
 </body>
 </html>
