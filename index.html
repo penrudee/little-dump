@@ -80,21 +80,17 @@
     import { WebsocketProvider } from 'https://esm.sh/y-websocket@1.5'
     import { IndexeddbPersistence } from 'https://esm.sh/y-indexeddb@9'
 
-    // 1. ตั้งค่า Yjs, IndexedDB และ WebRTC Syncing
+    // 1. ตั้งค่า Yjs, IndexedDB และ y-websocket
     const doc = new Y.Doc();
-    const provider = new WebsocketProvider​('my-decentralized-blog-room', doc, {
-      signaling: ['wss://dearai.kaminpos.xyz'],
-      peerOpts: {
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.cloudflare.com:3478' }
-      ]
-    }
-  }
-    });
-    const persistence = new IndexeddbPersistence('my-decentralized-blog-db', doc);
 
+    // พารามิเตอร์ของ WebsocketProvider: (Server_URL, Room_Name, Y.Doc)
+    const provider = new WebsocketProvider(
+      'wss://dearai.kaminpos.xyz',   // Server URL ของ Termux/Server คุณ
+      'my-decentralized-blog-room',  // ชื่อ Room
+      doc                            // Y.Doc Object
+    );
+
+    const persistence = new IndexeddbPersistence('my-decentralized-blog-db', doc);
     const yPosts = doc.getArray('posts');
 
     // 2. กำหนด Default Credentials
