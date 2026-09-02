@@ -217,7 +217,7 @@
     //     body: JSON.stringify({ content: promptText })
     //   });
     async function queryHuggingFace(promptText) {
-  const response = await fetch("/api/ai-comment", {   // ← เพิ่ม /api นำหน้า
+  const response = await fetch("/ai-comment", {   // ← เพิ่ม /api นำหน้า
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content: promptText })
