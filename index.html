@@ -215,7 +215,7 @@
     const AI_BOT_NAMES = ['สมชาย สายอ่าน', 'กูรูวรรณกรรม', 'นักคิดเมืองกรุง', 'สายซุ่มอ่าน', 'ผู้ท่องโลกกว้าง'];
 
     async function queryHuggingFace(promptText) {
-      const response = await fetch("/api/ai-comment", {
+      const response = await fetch("/ai-comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: promptText })
