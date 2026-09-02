@@ -37,8 +37,11 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand" href="#">My Decent Blog</a>
-      <button class="btn btn-outline-light btn-sm" id="authBtn" data-bs-toggle="modal"
-        data-bs-target="#loginModal">Owner Login</button>
+      <div>
+        <button class="btn btn-outline-light btn-sm d-none" id="logoutBtn" onclick="handleLogout()">Logout</button>
+        <button class="btn btn-outline-light btn-sm" id="authBtn" data-bs-toggle="modal"
+          data-bs-target="#loginModal">Owner Login</button>
+      </div>
     </div>
   </nav>
 
@@ -74,11 +77,12 @@
           <h5 class="modal-title">เข้าสู่ระบบเจ้าของบล็อก</h5>
         </div>
         <div class="modal-body">
-          <input type="text" id="loginUser" class="form-control mb-2" placeholder="Username">
-          <input type="password" id="loginPass" class="form-control mb-2" placeholder="Password">
+          <div id="loginError" class="alert alert-danger d-none py-2"></div>
+          <input type="text" id="loginUser" class="form-control mb-2" placeholder="Username" autocomplete="username">
+          <input type="password" id="loginPass" class="form-control mb-2" placeholder="Password" autocomplete="current-password">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" onclick="handleLogin()">เข้าสู่ระบบ</button>
+          <button type="button" class="btn btn-primary" id="loginSubmitBtn" onclick="handleLogin()">เข้าสู่ระบบ</button>
         </div>
       </div>
     </div>
@@ -91,10 +95,11 @@
           <h5 class="modal-title">เปลี่ยนรหัสผ่าน Admin</h5>
         </div>
         <div class="modal-body">
-          <input type="password" id="newPass" class="form-control mb-2" placeholder="รหัสผ่านใหม่">
+          <div id="changePassError" class="alert alert-danger d-none py-2"></div>
+          <input type="password" id="newPass" class="form-control mb-2" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)" autocomplete="new-password">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-success" onclick="changePassword()">บันทึก</button>
+          <button type="button" class="btn btn-success" id="changePassSubmitBtn" onclick="changePassword()">บันทึก</button>
         </div>
       </div>
     </div>
@@ -103,23 +108,39 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import * as Y from 'https://esm.sh/yjs@13'
-    import {WebsocketProvider} from 'https://esm.sh/y-websocket@1.5'
-    import {IndexeddbPersistence} from 'https://esm.sh/y-indexeddb@9'
+    import { WebsocketProvider } from 'https://esm.sh/y-websocket@1.5'
+    import { IndexeddbPersistence } from 'https://esm.sh/y-indexeddb@9'
 
     // 1. ตั้งค่า Yjs, IndexedDB และ y-websocket
     const doc = new Y.Doc();
 
-    // พารามิเตอร์ของ WebsocketProvider: (Server_URL, Room_Name, Y.Doc)
     const provider = new WebsocketProvider(
-      'wss://dearai.kaminpos.xyz',   // Server URL ของ Termux/Server คุณ
-      'my-decentralized-blog-room',  // ชื่อ Room
-      doc                            // Y.Doc Object
+      'wss://dearai.kaminpos.xyz',
+      'my-decentralized-blog-room',
+      doc
     );
 
     const persistence = new IndexeddbPersistence('my-decentralized-blog-db', doc);
     const yPosts = doc.getArray('posts');
 
+    // 2. เช็คสถานะ login กับ server ตอนโหลดหน้า (แทนการอ่านจาก localStorage)
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/session');
+        const data = await res.json();
+        setLoggedInUI(data.loggedIn);
+      } catch (e) {
+        setLoggedInUI(false);
+      }
+    }
 
+    function setLoggedInUI(isLoggedIn) {
+      document.getElementById('adminPanel').classList.toggle('d-none', !isLoggedIn);
+      document.getElementById('authBtn').classList.toggle('d-none', isLoggedIn);
+      document.getElementById('logoutBtn').classList.toggle('d-none', !isLoggedIn);
+    }
+
+    checkSession();
 
     // 3. แสดงจำนวนผู้ใช้งานที่กำลังออนไลน์ (Awareness)
     provider.awareness.on('change', () => {
@@ -209,44 +230,94 @@
       yPosts.insert(postIndex, [targetPost]);
     };
 
-    // 6. ระบบยืนยันตัวตน
-    window.handleLogin = function () {
+    // 6. ระบบยืนยันตัวตน - เรียก Cloudflare Function ฝั่ง server แทนการเช็คใน localStorage
+    window.handleLogin = async function () {
       const u = document.getElementById('loginUser').value;
       const p = document.getElementById('loginPass').value;
-      if (u === localStorage.getItem('admin_user') && p === localStorage.getItem('admin_pass')) {
-        document.getElementById('adminPanel').classList.remove('d-none');
-        document.getElementById('authBtn').innerText = 'Owner Logged In';
-        document.getElementById('authBtn').disabled = true;
+      const errorBox = document.getElementById('loginError');
+      const btn = document.getElementById('loginSubmitBtn');
+
+      errorBox.classList.add('d-none');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.error || 'เข้าสู่ระบบไม่สำเร็จ';
+          errorBox.classList.remove('d-none');
+          return;
+        }
+
+        setLoggedInUI(true);
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
         bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
-      } else {
-        alert('Username หรือ Password ไม่ถูกต้อง');
+      } catch (e) {
+        errorBox.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+        errorBox.classList.remove('d-none');
+      } finally {
+        btn.disabled = false;
       }
     };
 
-    window.changePassword = function () {
+    window.handleLogout = async function () {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+      } finally {
+        setLoggedInUI(false);
+      }
+    };
+
+    window.changePassword = async function () {
       const newP = document.getElementById('newPass').value;
-      if (newP) {
-        localStorage.setItem('admin_pass', newP);
+      const errorBox = document.getElementById('changePassError');
+      const btn = document.getElementById('changePassSubmitBtn');
+
+      errorBox.classList.add('d-none');
+      if (!newP) return;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newPassword: newP })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.error || 'เปลี่ยนรหัสผ่านไม่สำเร็จ';
+          errorBox.classList.remove('d-none');
+          return;
+        }
+
         alert('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+        document.getElementById('newPass').value = '';
         bootstrap.Modal.getInstance(document.getElementById('changePassModal')).hide();
+      } catch (e) {
+        errorBox.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+        errorBox.classList.remove('d-none');
+      } finally {
+        btn.disabled = false;
       }
     };
 
     // 7. การเชื่อมต่อ Cloudflare Pages Function เพื่อรับคอมเมนต์จาก AI
     const AI_BOT_NAMES = ['สมชาย สายอ่าน', 'กูรูวรรณกรรม', 'นักคิดเมืองกรุง', 'สายซุ่มอ่าน', 'ผู้ท่องโลกกว้าง', 'แมวเก้าชีวิต', 'หนุ่มเมืองกรุง', 'สาวน้อยบนยอดดอย', 'นักเวทย์จากราชสำนักหลวง'];
 
-    // async function queryHuggingFace(promptText) {
-    //   const response = await fetch("/ai-comment", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ content: promptText })
-    //   });
     async function queryHuggingFace(promptText) {
-      const response = await fetch("/api/ai-comment", {   
+      const response = await fetch("/api/ai-comment", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({content: promptText})
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: promptText })
       });
+
       if (!response.ok) {
         throw new Error("Failed to fetch AI comment from Serverless Function");
       }
@@ -262,7 +333,6 @@
       for (let i = 0; i < postsArray.length; i++) {
         const post = postsArray[i];
 
-        // ส่งขอคอมเมนต์จาก AI เพียงวันละ 1 ครั้งต่อ 1 บทความ
         if (post.lastAICommentDate !== today) {
           try {
             const rawText = await queryHuggingFace(post.content);
@@ -284,15 +354,14 @@
         }
       }
     }
-    
+
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
-    // สร้าง Event ตรวจสอบการเชื่อมต่อ WebSocket และแสดงผลบนหน้าจอ
-    provider.on('status', event => {
-      console.log('WebRTC Status:', event.status); // connected หรือ disconnected
 
-      // สร้าง/อัปเดตกล่อง Log บนหน้าจอมือถือ
+    provider.on('status', event => {
+      console.log('WebRTC Status:', event.status);
+
       let logBox = document.getElementById('debug-status');
       if (!logBox) {
         logBox = document.createElement('div');
