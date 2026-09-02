@@ -340,7 +340,7 @@
       const totalPosts = rawPosts.length;
 
       // กลับลำดับของ array เพื่อให้โพสต์ใหม่แสดงผลด้านบนสุด
-      rawPosts.slice().reverse().forEach((post, reversedIndex) => {
+      rawPosts.forEach((post, reversedIndex) => {
         // คำนวณ index ที่แท้จริงของโพสต์ใน yPosts
         const originalIndex = totalPosts - 1 - reversedIndex;
 
