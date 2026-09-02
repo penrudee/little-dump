@@ -201,6 +201,29 @@
     .modal-header, .modal-footer {
       border-color: rgba(197, 160, 89, 0.3);
     }
+
+    .post-card.shared-highlight {
+      animation: sharedGlow 2.2s ease-out;
+    }
+
+    @keyframes sharedGlow {
+      0% { box-shadow: 0 0 0 3px var(--gold-accent), 0 10px 30px rgba(0,0,0,0.7); }
+      100% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(139, 90, 43, 0.15); }
+    }
+
+    .btn-share-sm {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 3px;
+      color: var(--dark-leather);
+      border-color: var(--dark-leather);
+    }
+
+    .btn-share-sm:hover {
+      background-color: var(--dark-leather);
+      color: var(--gold-accent);
+    }
   </style>
 </head>
 
@@ -347,9 +370,14 @@
       renderPosts();
     });
 
+    let hasScrolledToShared = false;
     persistence.on('synced', () => {
       renderPosts();
       checkAndTriggerAIComments();
+      if (!hasScrolledToShared) {
+        hasScrolledToShared = true;
+        setTimeout(scrollToSharedPost, 150);
+      }
     });
 
     // ฟังก์ชันแปลงข้อความธรรมดา ให้ตัวที่เป็น URL กลายเป็นลิงก์ขีดเส้นใต้ และเปิดหน้าใหม่
@@ -375,6 +403,7 @@
         const postId = post.id;
         const postCard = document.createElement('div');
         postCard.className = 'card post-card p-3';
+        postCard.id = `post-${postId}`;
 
         let commentsHTML = (post.comments || []).map((c, cIndex) => {
           const isRiddle = c.author.includes('Tom Riddle');
@@ -407,6 +436,7 @@
         postCard.innerHTML = `
           <div class="card-body">
             ${postAdminControls}
+            <button class="btn btn-outline-primary btn-share-sm float-end me-1" onclick="sharePost(${postId})">🔗 แชร์โพสต์นี้</button>
             <h3 class="card-title">${escapeHtml(post.title)}</h3>
             <p class="card-text">${autoLinkify(post.content)}</p>
             <hr style="border-color: var(--gold-accent);">
@@ -422,6 +452,42 @@
         container.appendChild(postCard);
       });
     };
+
+    window.sharePost = async function (postId) {
+      const url = new URL(window.location.href);
+      url.hash = '';
+      url.searchParams.set('post', postId);
+      const shareUrl = url.toString();
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ url: shareUrl, title: "T. M. Riddle's Diary" });
+          return;
+        } catch (e) {
+          // ผู้ใช้กดยกเลิก share sheet หรืออุปกรณ์ไม่รองรับ ให้ fallback ไป copy แทน
+        }
+      }
+
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('คัดลอกลิงก์โพสต์นี้แล้ว ✒️');
+      } catch (e) {
+        prompt('คัดลอกลิงก์นี้ด้วยตนเอง:', shareUrl);
+      }
+    };
+
+    function scrollToSharedPost() {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('post');
+      if (!targetId) return;
+
+      const el = document.getElementById(`post-${targetId}`);
+      if (!el) return;
+
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('shared-highlight');
+      setTimeout(() => el.classList.remove('shared-highlight'), 2200);
+    }
 
     window.deletePost = function (postId) {
       if (!isLoggedInState) return;
