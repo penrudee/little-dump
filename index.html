@@ -94,11 +94,7 @@
     const persistence = new IndexeddbPersistence('my-decentralized-blog-db', doc);
     const yPosts = doc.getArray('posts');
 
-    // 2. กำหนด Default Credentials
-    if (!localStorage.getItem('admin_user')) {
-      localStorage.setItem('admin_user', 'admin');
-      localStorage.setItem('admin_pass', 'admin');
-    }
+   
 
     // 3. แสดงจำนวนผู้ใช้งานที่กำลังออนไลน์ (Awareness)
     provider.awareness.on('change', () => {
@@ -221,7 +217,7 @@
     //     body: JSON.stringify({ content: promptText })
     //   });
     async function queryHuggingFace(promptText) {
-  const response = await fetch("/ai-comment", {   // ← เพิ่ม /api นำหน้า
+  const response = await fetch("/api/ai-comment", {   // ← เพิ่ม /api นำหน้า
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content: promptText })
