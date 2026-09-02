@@ -34,7 +34,7 @@ export async function onRequestPost(context) {
     });
 
     const result = await hfResponse.json();
-
+    console.log('result',result);
     if (!hfResponse.ok) {
       return new Response(JSON.stringify({ error: result }), {
         status: hfResponse.status,
