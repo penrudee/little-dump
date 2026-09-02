@@ -251,7 +251,8 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <input type="hidden" id="editPostIndex">
+          <!-- เปลี่ยนไปเก็บ postId แทน index -->
+          <input type="hidden" id="editPostId">
           <input type="text" id="editPostTitle" class="form-control mb-2" placeholder="หัวเรื่อง">
           <textarea id="editPostContent" class="form-control" rows="4" placeholder="เนื้อหา"></textarea>
         </div>
@@ -367,19 +368,19 @@
       container.innerHTML = '';
 
       const rawPosts = yPosts.toArray();
-      const totalPosts = rawPosts.length;
 
       // แสดงผลเรียงจาก ใหม่สุด ไป หาเก่าสุด
-      rawPosts.forEach((post, reversedIndex) => {
-        const originalIndex = totalPosts - 1 - reversedIndex;
-
+      // คัดลอกพร้อมอ้างอิง postId โดยตรง
+      [...rawPosts].reverse().forEach((post) => {
+        const postId = post.id;
         const postCard = document.createElement('div');
         postCard.className = 'card post-card p-3';
 
         let commentsHTML = (post.comments || []).map((c, cIndex) => {
           const isRiddle = c.author.includes('Tom Riddle');
+          // ส่ง postId และ cIndex เข้าไปหาตำแหน่งล่าสุดเมื่อกดลบ
           const deleteCommentBtn = isLoggedInState 
-            ? `<button class="btn btn-outline-danger btn-action-sm float-end" onclick="deleteComment(${originalIndex}, ${cIndex})">ลบ</button>` 
+            ? `<button class="btn btn-outline-danger btn-action-sm float-end" onclick="deleteComment(${postId}, ${cIndex})">ลบ</button>` 
             : '';
 
           return `
@@ -395,10 +396,11 @@
         const placeholderAuthor = isLoggedInState ? 'นามของคุณ' : 'ต้องเปิดสมุดก่อน';
         const placeholderText = isLoggedInState ? 'เขียนตอบกลับทอม ริดเดิล...' : '🔒 กรุณาลงชื่อเข้าใช้ (Login) เพื่อจรดข้อความ...';
 
+        // ใช้ postId อ้างอิงแทน index ในปุ่ม Action
         const postAdminControls = isLoggedInState ? `
           <div class="float-end">
-            <button class="btn btn-outline-warning btn-action-sm me-1" onclick="openEditModal(${originalIndex})">✏️ แก้ไข</button>
-            <button class="btn btn-outline-danger btn-action-sm" onclick="deletePost(${originalIndex})">🗑️ ลบ</button>
+            <button class="btn btn-outline-warning btn-action-sm me-1" onclick="openEditModal(${postId})">✏️ แก้ไข</button>
+            <button class="btn btn-outline-danger btn-action-sm" onclick="deletePost(${postId})">🗑️ ลบ</button>
           </div>
         ` : '';
 
@@ -411,9 +413,9 @@
             <h5>ข้อความตอบกลับจากสมุดบันทึก</h5>
             <div class="mb-3">${commentsHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
             <div class="input-group mb-3">
-              <input type="text" id="author-${originalIndex}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;" ${disabledAttr}>
-              <input type="text" id="input-${originalIndex}" class="form-control" placeholder="${placeholderText}" ${disabledAttr}>
-              <button class="btn btn-outline-primary" onclick="addComment(${originalIndex})" ${disabledAttr}>สื่อสาร</button>
+              <input type="text" id="author-${postId}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;" ${disabledAttr}>
+              <input type="text" id="input-${postId}" class="form-control" placeholder="${placeholderText}" ${disabledAttr}>
+              <button class="btn btn-outline-primary" onclick="addComment(${postId})" ${disabledAttr}>สื่อสาร</button>
             </div>
           </div>
         `;
@@ -421,17 +423,23 @@
       });
     };
 
-    window.deletePost = function (index) {
+    window.deletePost = function (postId) {
       if (!isLoggedInState) return;
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return alert('ไม่พบโพสต์นี้ หรืออาจถูกลบไปแล้ว');
+
       if (confirm('คุณต้องการลบข้อความนี้ออกจากสมุดบันทึกใช่หรือไม่?')) {
         yPosts.delete(index, 1);
       }
     };
 
-    window.openEditModal = function (index) {
+    window.openEditModal = function (postId) {
       if (!isLoggedInState) return;
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return alert('ไม่พบโพสต์นี้ หรืออาจถูกลบไปแล้ว');
+
       const targetPost = yPosts.get(index);
-      document.getElementById('editPostIndex').value = index;
+      document.getElementById('editPostId').value = postId;
       document.getElementById('editPostTitle').value = targetPost.title;
       document.getElementById('editPostContent').value = targetPost.content;
       
@@ -441,11 +449,14 @@
 
     window.saveEditPost = function () {
       if (!isLoggedInState) return;
-      const index = parseInt(document.getElementById('editPostIndex').value);
+      const postId = Number(document.getElementById('editPostId').value);
       const newTitle = document.getElementById('editPostTitle').value.trim();
       const newContent = document.getElementById('editPostContent').value.trim();
 
       if (!newTitle || !newContent) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return alert('โพสต์นี้ถูกลบไปแล้ว');
 
       const targetPost = yPosts.get(index);
       targetPost.title = newTitle;
@@ -457,14 +468,17 @@
       bootstrap.Modal.getInstance(document.getElementById('editPostModal')).hide();
     };
 
-    window.deleteComment = function (postIndex, commentIndex) {
+    window.deleteComment = function (postId, commentIndex) {
       if (!isLoggedInState) return;
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return alert('โพสต์นี้ถูกลบไปแล้ว');
+
       if (confirm('คุณต้องการลบข้อความตอบกลับนี้ใช่หรือไม่?')) {
-        const targetPost = yPosts.get(postIndex);
+        const targetPost = yPosts.get(index);
         targetPost.comments.splice(commentIndex, 1);
 
-        yPosts.delete(postIndex, 1);
-        yPosts.insert(postIndex, [targetPost]);
+        yPosts.delete(index, 1);
+        yPosts.insert(index, [targetPost]);
       }
     };
 
@@ -486,20 +500,23 @@
       checkAndTriggerAIComments();
     };
 
-    window.addComment = async function (postIndex) {
+    window.addComment = async function (postId) {
       if (!isLoggedInState) {
         alert('เฉพาะผู้ที่สลักชื่อเจ้าของ (Login) แล้วเท่านั้นที่จะเขียนตอบกลับสมุดเล่มนี้ได้');
         return;
       }
 
-      const authorInput = document.getElementById(`author-${postIndex}`);
-      const textInput = document.getElementById(`input-${postIndex}`);
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return alert('โพสต์นี้ถูกลบไปแล้ว');
+
+      const authorInput = document.getElementById(`author-${postId}`);
+      const textInput = document.getElementById(`input-${postId}`);
       const author = authorInput.value.trim() || 'ผู้เขียนผู้ลึกลับ';
       const text = textInput.value.trim();
 
       if (!text) return;
 
-      const targetPost = yPosts.get(postIndex);
+      const targetPost = yPosts.get(index);
       targetPost.comments.push({
         author,
         text,
@@ -508,8 +525,8 @@
 
       targetPost.lastAICommentDate = null;
 
-      yPosts.delete(postIndex, 1);
-      yPosts.insert(postIndex, [targetPost]);
+      yPosts.delete(index, 1);
+      yPosts.insert(index, [targetPost]);
 
       checkAndTriggerAIComments();
     };
