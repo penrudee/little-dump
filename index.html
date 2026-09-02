@@ -9,14 +9,17 @@
   <!-- Google Fonts: ลายมือและฟอนต์สไตล์เวทมนตร์ -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Cinzel:wght@600;700;900&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Cinzel:wght@600;700;900&family=Kalam:wght@300;400;700&display=swap"
+    rel="stylesheet">
 
   <style>
     :root {
       --parchment-bg: #f2e3c6;
       --parchment-texture: #e4ce9f;
       --ink-color: #1a0f07;
-      --riddle-ink: #0d2b1d; /* หมึกสีเขียวสลิธีรินเข้มปนดำ */
+      --riddle-ink: #0d2b1d;
+      /* หมึกสีเขียวสลิธีรินเข้มปนดำ */
       --gold-accent: #c5a059;
       --dark-leather: #14110f;
     }
@@ -35,7 +38,7 @@
     .navbar {
       background-color: var(--dark-leather) !important;
       border-bottom: 2px solid var(--gold-accent);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
     }
 
     .navbar-brand {
@@ -64,11 +67,12 @@
     }
 
     /* ตัวสมุด / การ์ดบทความ */
-    .post-card, #adminPanel {
+    .post-card,
+    #adminPanel {
       background: var(--parchment-bg);
-      background-image: 
-        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.05) 100%),
-        linear-gradient(to right, rgba(0,0,0,0.05) 0%, transparent 5%, transparent 95%, rgba(0,0,0,0.05) 100%);
+      background-image:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.05) 100%),
+        linear-gradient(to right, rgba(0, 0, 0, 0.05) 0%, transparent 5%, transparent 95%, rgba(0, 0, 0, 0.05) 100%);
       border: 1px solid #b89b5e;
       border-radius: 4px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(139, 90, 43, 0.15);
@@ -80,12 +84,16 @@
     .post-card::before {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
       pointer-events: none;
     }
 
-    h3.card-title, h5 {
+    h3.card-title,
+    h5 {
       font-family: 'Cinzel', serif;
       font-weight: 700;
       color: #2b1810;
@@ -126,10 +134,12 @@
         filter: blur(4px);
         transform: translateY(-2px);
       }
+
       50% {
         opacity: 0.8;
         filter: blur(1px);
       }
+
       100% {
         opacity: 1;
         filter: blur(0);
@@ -152,13 +162,19 @@
       color: var(--ink-color);
     }
 
+    .form-control:disabled {
+      background-color: rgba(0, 0, 0, 0.05);
+      cursor: not-allowed;
+    }
+
     .form-control::placeholder {
       color: #7a6851;
       font-style: italic;
     }
 
     /* ปุ่มกด */
-    .btn-primary, .btn-success {
+    .btn-primary,
+    .btn-success {
       background-color: var(--dark-leather);
       border-color: var(--gold-accent);
       color: var(--gold-accent);
@@ -167,7 +183,8 @@
       transition: all 0.3s ease;
     }
 
-    .btn-primary:hover, .btn-success:hover {
+    .btn-primary:hover,
+    .btn-success:hover {
       background-color: var(--gold-accent);
       border-color: var(--dark-leather);
       color: var(--dark-leather);
@@ -209,7 +226,8 @@
     <div class="container">
       <a class="navbar-brand" href="#">📖 T. M. RIDDLE'S DIARY</a>
       <div>
-        <button class="btn btn-outline-light btn-sm d-none" id="logoutBtn" onclick="handleLogout()">ปิดสมุด (Logout)</button>
+        <button class="btn btn-outline-light btn-sm d-none" id="logoutBtn" onclick="handleLogout()">ปิดสมุด
+          (Logout)</button>
         <button class="btn btn-outline-light btn-sm" id="authBtn" data-bs-toggle="modal"
           data-bs-target="#loginModal">สลักชื่อเจ้าของ (Owner)</button>
       </div>
@@ -229,7 +247,8 @@
         <input type="text" id="postTitle" class="form-control" placeholder="หัวเรื่องข้อความ...">
       </div>
       <div class="mb-2">
-        <textarea id="postContent" class="form-control" rows="3" placeholder="จรดปลายปากกาเขียนความลับของคุณที่นี่..."></textarea>
+        <textarea id="postContent" class="form-control" rows="3"
+          placeholder="จรดปลายปากกาเขียนความลับของคุณที่นี่..."></textarea>
       </div>
       <div class="d-flex justify-content-between">
         <button class="btn btn-primary btn-sm" onclick="createPost()">หยดหมึกลงกระดาษ</button>
@@ -251,7 +270,8 @@
         <div class="modal-body">
           <div id="loginError" class="alert alert-danger d-none py-2"></div>
           <input type="text" id="loginUser" class="form-control mb-2" placeholder="Username" autocomplete="username">
-          <input type="password" id="loginPass" class="form-control mb-2" placeholder="Password" autocomplete="current-password">
+          <input type="password" id="loginPass" class="form-control mb-2" placeholder="Password"
+            autocomplete="current-password">
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" id="loginSubmitBtn" onclick="handleLogin()">เปิดสมุด</button>
@@ -269,10 +289,12 @@
         </div>
         <div class="modal-body">
           <div id="changePassError" class="alert alert-danger d-none py-2"></div>
-          <input type="password" id="newPass" class="form-control mb-2" placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)" autocomplete="new-password">
+          <input type="password" id="newPass" class="form-control mb-2"
+            placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)" autocomplete="new-password">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-success" id="changePassSubmitBtn" onclick="changePassword()">บันทึก</button>
+          <button type="button" class="btn btn-success" id="changePassSubmitBtn"
+            onclick="changePassword()">บันทึก</button>
         </div>
       </div>
     </div>
@@ -281,8 +303,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import * as Y from 'https://esm.sh/yjs@13'
-    import { WebsocketProvider } from 'https://esm.sh/y-websocket@1.5'
-    import { IndexeddbPersistence } from 'https://esm.sh/y-indexeddb@9'
+    import {WebsocketProvider} from 'https://esm.sh/y-websocket@1.5'
+    import {IndexeddbPersistence} from 'https://esm.sh/y-indexeddb@9'
 
     const doc = new Y.Doc();
     const provider = new WebsocketProvider(
@@ -292,6 +314,9 @@
     );
     const persistence = new IndexeddbPersistence('my-decentralized-blog-db', doc);
     const yPosts = doc.getArray('posts');
+
+    // ตัวแปรเก็บสถานะการเข้าสู่ระบบ
+    let isLoggedInState = false;
 
     async function checkSession() {
       try {
@@ -304,9 +329,11 @@
     }
 
     function setLoggedInUI(isLoggedIn) {
+      isLoggedInState = isLoggedIn;
       document.getElementById('adminPanel').classList.toggle('d-none', !isLoggedIn);
       document.getElementById('authBtn').classList.toggle('d-none', isLoggedIn);
       document.getElementById('logoutBtn').classList.toggle('d-none', !isLoggedIn);
+      renderPosts(); // Render ใหม่เพื่อ อัปเดตการเปิด/ปิด ช่องกรอกคอมเมนต์
     }
 
     checkSession();
@@ -343,6 +370,11 @@
           `;
         }).join('');
 
+        // สวิตช์เปิด/ปิดอินพุตตามสถานะ Login
+        const disabledAttr = isLoggedInState ? '' : 'disabled';
+        const placeholderAuthor = isLoggedInState ? 'นามของคุณ' : 'ต้องเปิดสมุดก่อน';
+        const placeholderText = isLoggedInState ? 'เขียนตอบกลับทอม ริดเดิล...' : '🔒 กรุณาลงชื่อเข้าใช้ (Login) เพื่อจรดข้อความ...';
+
         postCard.innerHTML = `
           <div class="card-body">
             <h3 class="card-title">${escapeHtml(post.title)}</h3>
@@ -351,9 +383,9 @@
             <h5>ข้อความตอบกลับจากสมุดบันทึก</h5>
             <div class="mb-3">${commentsHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
             <div class="input-group mb-3">
-              <input type="text" id="author-${index}" class="form-control" placeholder="นามของคุณ" style="max-width: 160px;">
-              <input type="text" id="input-${index}" class="form-control" placeholder="เขียนตอบกลับทอม ริดเดิล...">
-              <button class="btn btn-outline-primary" onclick="addComment(${index})">สื่อสาร</button>
+              <input type="text" id="author-${index}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;" ${disabledAttr}>
+              <input type="text" id="input-${index}" class="form-control" placeholder="${placeholderText}" ${disabledAttr}>
+              <button class="btn btn-outline-primary" onclick="addComment(${index})" ${disabledAttr}>สื่อสาร</button>
             </div>
           </div>
         `;
@@ -379,7 +411,13 @@
       checkAndTriggerAIComments();
     };
 
-    window.addComment = function (postIndex) {
+    window.addComment = async function (postIndex) {
+      // ป้องกันการแอบรันฟังก์ชันหากไม่ได้ login
+      if (!isLoggedInState) {
+        alert('เฉพาะผู้ที่สลักชื่อเจ้าของ (Login) แล้วเท่านั้นที่จะเขียนตอบกลับสมุดเล่มนี้ได้');
+        return;
+      }
+
       const authorInput = document.getElementById(`author-${postIndex}`);
       const textInput = document.getElementById(`input-${postIndex}`);
       const author = authorInput.value.trim() || 'ผู้เขียนผู้ลึกลับ';
@@ -416,8 +454,8 @@
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, password: p })
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username: u, password: p})
         });
         const data = await res.json();
 
@@ -441,7 +479,7 @@
 
     window.handleLogout = async function () {
       try {
-        await fetch('/api/logout', { method: 'POST' });
+        await fetch('/api/logout', {method: 'POST'});
       } finally {
         setLoggedInUI(false);
       }
@@ -459,8 +497,8 @@
       try {
         const res = await fetch('/api/change-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ newPassword: newP })
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({newPassword: newP})
         });
         const data = await res.json();
 
@@ -487,8 +525,8 @@
 
       const response = await fetch("/api/ai-comment", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: riddlePrompt })
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({content: riddlePrompt})
       });
 
       if (!response.ok) {
@@ -508,18 +546,23 @@
 
         if (post.lastAICommentDate !== today) {
           try {
-            // เอาข้อความล่าสุดในบทความหรือคอมเมนต์ล่าสุดมาประมวลผล
-            const lastMessage = post.comments.length > 0 
-              ? post.comments[post.comments.length - 1].text 
+            const lastMessage = post.comments.length > 0
+              ? post.comments[post.comments.length - 1].text
               : post.content;
 
             const rawText = await queryHuggingFace(lastMessage);
-            const cleanText = rawText.replace(/\[\/?INST\]/g, '').split('\n').pop();
+
+            // 🔧 แก้ไขจุดนี้: ทำความสะอาดแท็กและช่องว่าง โดยไม่ตัดบรรทัดทิ้งด้วย .pop()
+            const cleanText = rawText
+              .replace(/\[\/?INST\]/g, '') // ลบแท็ก instruction
+              .replace(/<s>|<\/s>/g, '')   // ลบแท็กเริ่ม/จบประโยคของ LLM
+              .trim();
+
             const botName = "Tom Marvolo Riddle ✒️";
 
             post.comments.push({
               author: botName,
-              text: cleanText,
+              text: cleanText || "ฉันเห็นความปรารถนาในใจของเธอ... เล่าให้ฉันฟังมากกว่านี้สิ",
               date: new Date().toLocaleTimeString()
             });
             post.lastAICommentDate = today;
