@@ -1,4 +1,4 @@
-// functions/api/ai-comment.js
+// ai-comment.js
 
 export async function onRequestPost(context) {
   try {
