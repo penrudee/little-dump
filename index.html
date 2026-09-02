@@ -217,11 +217,11 @@
     //     body: JSON.stringify({ content: promptText })
     //   });
     async function queryHuggingFace(promptText) {
-  const response = await fetch("/ai-comment", {   // ← เพิ่ม /api นำหน้า
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content: promptText })
-  });
+      const response = await fetch("/ai-comment", {   // ← เพิ่ม /api นำหน้า
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: promptText })
+        });
       if (!response.ok) {
         throw new Error("Failed to fetch AI comment from Serverless Function");
       }
