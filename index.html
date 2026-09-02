@@ -165,7 +165,6 @@
       color: var(--gold-accent);
     }
 
-    /* สไตล์ปุ่มจัดการ ลบ/แก้ไข */
     .btn-action-sm {
       font-family: 'Cinzel', serif;
       font-size: 0.75rem;
@@ -337,15 +336,21 @@
       const container = document.getElementById('postsContainer');
       container.innerHTML = '';
 
-      yPosts.toArray().forEach((post, index) => {
+      const rawPosts = yPosts.toArray();
+      const totalPosts = rawPosts.length;
+
+      // เพิ่ม .slice().reverse() เพื่อกลับลำดับในการแสดงผล (ใหม่สุดขึ้นก่อน)
+      rawPosts.slice().reverse().forEach((post, reversedIndex) => {
+        // คำนวณ index จริงที่อ้างอิงกับ yPosts เพื่อให้ปุ่ม ลบ/แก้ไข ทำงานถูกต้อง
+        const originalIndex = totalPosts - 1 - reversedIndex;
+
         const postCard = document.createElement('div');
         postCard.className = 'card post-card p-3';
 
-        // สร้าง HTML สำหรับคอมเมนต์ พร้อมปุ่มลบคอมเมนต์ (ถ้าสั่ง login)
         let commentsHTML = (post.comments || []).map((c, cIndex) => {
           const isRiddle = c.author.includes('Tom Riddle');
           const deleteCommentBtn = isLoggedInState 
-            ? `<button class="btn btn-outline-danger btn-action-sm float-end" onclick="deleteComment(${index}, ${cIndex})">ลบ</button>` 
+            ? `<button class="btn btn-outline-danger btn-action-sm float-end" onclick="deleteComment(${originalIndex}, ${cIndex})">ลบ</button>` 
             : '';
 
           return `
@@ -357,16 +362,14 @@
           `;
         }).join('');
 
-        // สวิตช์เปิด/ปิดอินพุตคอมเมนต์
         const disabledAttr = isLoggedInState ? '' : 'disabled';
         const placeholderAuthor = isLoggedInState ? 'นามของคุณ' : 'ต้องเปิดสมุดก่อน';
         const placeholderText = isLoggedInState ? 'เขียนตอบกลับทอม ริดเดิล...' : '🔒 กรุณาลงชื่อเข้าใช้ (Login) เพื่อจรดข้อความ...';
 
-        // ปุ่ม แก้ไข / ลบ สำหรับตัวบทความ (ถ้าสั่ง login)
         const postAdminControls = isLoggedInState ? `
           <div class="float-end">
-            <button class="btn btn-outline-warning btn-action-sm me-1" onclick="openEditModal(${index})">✏️ แก้ไข</button>
-            <button class="btn btn-outline-danger btn-action-sm" onclick="deletePost(${index})">🗑️ ลบ</button>
+            <button class="btn btn-outline-warning btn-action-sm me-1" onclick="openEditModal(${originalIndex})">✏️ แก้ไข</button>
+            <button class="btn btn-outline-danger btn-action-sm" onclick="deletePost(${originalIndex})">🗑️ ลบ</button>
           </div>
         ` : '';
 
@@ -379,9 +382,9 @@
             <h5>ข้อความตอบกลับจากสมุดบันทึก</h5>
             <div class="mb-3">${commentsHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
             <div class="input-group mb-3">
-              <input type="text" id="author-${index}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;" ${disabledAttr}>
-              <input type="text" id="input-${index}" class="form-control" placeholder="${placeholderText}" ${disabledAttr}>
-              <button class="btn btn-outline-primary" onclick="addComment(${index})" ${disabledAttr}>สื่อสาร</button>
+              <input type="text" id="author-${originalIndex}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;" ${disabledAttr}>
+              <input type="text" id="input-${originalIndex}" class="form-control" placeholder="${placeholderText}" ${disabledAttr}>
+              <button class="btn btn-outline-primary" onclick="addComment(${originalIndex})" ${disabledAttr}>สื่อสาร</button>
             </div>
           </div>
         `;
@@ -389,7 +392,6 @@
       });
     };
 
-    // --- ฟังก์ชันการจัดการบทความ (ลบ / แก้ไข) ---
     window.deletePost = function (index) {
       if (!isLoggedInState) return;
       if (confirm('คุณต้องการลบข้อความนี้ออกจากสมุดบันทึกใช่หรือไม่?')) {
@@ -426,7 +428,6 @@
       bootstrap.Modal.getInstance(document.getElementById('editPostModal')).hide();
     };
 
-    // --- ฟังก์ชันการจัดการความคิดเห็น (ลบ) ---
     window.deleteComment = function (postIndex, commentIndex) {
       if (!isLoggedInState) return;
       if (confirm('คุณต้องการลบข้อความตอบกลับนี้ใช่หรือไม่?')) {
@@ -443,7 +444,8 @@
       const content = document.getElementById('postContent').value;
       if (!title || !content) return alert('กรุณาจรดข้อความให้ครบถ้วน');
 
-      yPosts.push([{
+      // เปลี่ยนจาก push เป็น unshift เพื่อให้โพสต์ใหม่อยู่บนสุดเสมอ
+      yPosts.unshift([{
         id: Date.now(),
         title,
         content,
