@@ -212,15 +212,20 @@
     };
 
     // 7. การเชื่อมต่อ Cloudflare Pages Function เพื่อรับคอมเมนต์จาก AI
-    const AI_BOT_NAMES = ['สมชาย สายอ่าน', 'กูรูวรรณกรรม', 'นักคิดเมืองกรุง', 'สายซุ่มอ่าน', 'ผู้ท่องโลกกว้าง'];
+    const AI_BOT_NAMES = ['สมชาย สายอ่าน', 'กูรูวรรณกรรม', 'นักคิดเมืองกรุง', 'สายซุ่มอ่าน', 'ผู้ท่องโลกกว้าง','แมวเก้าชีวิต','หนุ่มเมืองกรุง','สาวน้อยบนยอดดอย','นักเวทย์จากราชสำนักหลวง'];
 
+    // async function queryHuggingFace(promptText) {
+    //   const response = await fetch("/ai-comment", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ content: promptText })
+    //   });
     async function queryHuggingFace(promptText) {
-      const response = await fetch("/ai-comment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: promptText })
-      });
-
+  const response = await fetch("/ai-comment", {   // ← เพิ่ม /api นำหน้า
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: promptText })
+  });
       if (!response.ok) {
         throw new Error("Failed to fetch AI comment from Serverless Function");
       }
