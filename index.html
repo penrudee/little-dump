@@ -18,6 +18,7 @@
       --riddle-ink: #0d2b1d;
       --gold-accent: #c5a059;
       --dark-leather: #14110f;
+      --link-color: #8b4513;
     }
 
     body {
@@ -93,6 +94,24 @@
       line-height: 1.8;
       color: var(--ink-color);
       white-space: pre-wrap;
+    }
+
+    /* สไตล์สำหรับลิงก์ */
+    a.diary-link {
+      color: var(--link-color);
+      text-decoration: underline;
+      font-weight: 700;
+      word-break: break-all;
+      transition: color 0.2s ease;
+    }
+
+    a.diary-link:hover {
+      color: #000;
+      text-decoration: underline;
+    }
+
+    .riddle-response a.diary-link {
+      color: var(--riddle-ink);
     }
 
     .comment-box {
@@ -332,6 +351,17 @@
       checkAndTriggerAIComments();
     });
 
+    // ฟังก์ชันแปลงข้อความธรรมดา ให้ตัวที่เป็น URL กลายเป็นลิงก์ขีดเส้นใต้ และเปิดหน้าใหม่
+    function autoLinkify(text) {
+      const escaped = escapeHtml(text);
+      const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+      
+      return escaped.replace(urlRegex, (url) => {
+        const href = url.startsWith('www.') ? `http://${url}` : url;
+        return `<a href="${href}" class="diary-link" target="_blank" rel="noopener noreferrer">${url}</a>`;
+      });
+    }
+
     window.renderPosts = function () {
       const container = document.getElementById('postsContainer');
       container.innerHTML = '';
@@ -339,9 +369,8 @@
       const rawPosts = yPosts.toArray();
       const totalPosts = rawPosts.length;
 
-      // กลับลำดับของ array เพื่อให้โพสต์ใหม่แสดงผลด้านบนสุด
+      // แสดงผลเรียงจาก ใหม่สุด ไป หาเก่าสุด
       rawPosts.forEach((post, reversedIndex) => {
-        // คำนวณ index ที่แท้จริงของโพสต์ใน yPosts
         const originalIndex = totalPosts - 1 - reversedIndex;
 
         const postCard = document.createElement('div');
@@ -357,7 +386,7 @@
             <div class="comment-box ${isRiddle ? 'riddle-response' : ''}">
               ${deleteCommentBtn}
               <strong>${escapeHtml(c.author)}</strong> <small class="text-muted">• ${c.date}</small>
-              <p class="mb-0 mt-1">${escapeHtml(c.text)}</p>
+              <p class="mb-0 mt-1">${autoLinkify(c.text)}</p>
             </div>
           `;
         }).join('');
@@ -377,7 +406,7 @@
           <div class="card-body">
             ${postAdminControls}
             <h3 class="card-title">${escapeHtml(post.title)}</h3>
-            <p class="card-text">${escapeHtml(post.content)}</p>
+            <p class="card-text">${autoLinkify(post.content)}</p>
             <hr style="border-color: var(--gold-accent);">
             <h5>ข้อความตอบกลับจากสมุดบันทึก</h5>
             <div class="mb-3">${commentsHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
@@ -444,7 +473,6 @@
       const content = document.getElementById('postContent').value;
       if (!title || !content) return alert('กรุณาจรดข้อความให้ครบถ้วน');
 
-      // ใช้ unshift เพื่อให้โพสต์ใหม่ล่าสุดถูกเพิ่มไว้ที่ Index 0
       yPosts.unshift([{
         id: Date.now(),
         title,
