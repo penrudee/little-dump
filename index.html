@@ -1,17 +1,53 @@
-<!-- index.html  -->
 <!DOCTYPE html>
 <html lang="th">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>P2P Web Blog with Yjs & Cloudflare Functions</title>
+  <title>Tom Riddle's Diary</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Google Fonts: ลายมือและฟอนต์สไตล์เวทมนตร์ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Charm:wght@400;700&family=Cinzel:wght@600;700;900&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+
   <style>
-    body {
-      background-color: #f8f9fa;
+    :root {
+      --parchment-bg: #f2e3c6;
+      --parchment-texture: #e4ce9f;
+      --ink-color: #1a0f07;
+      --riddle-ink: #0d2b1d; /* หมึกสีเขียวสลิธีรินเข้มปนดำ */
+      --gold-accent: #c5a059;
+      --dark-leather: #14110f;
     }
 
+    body {
+      background-color: #0a0908;
+      background-image: radial-gradient(#1a1614 1px, transparent 0);
+      background-size: 24px 24px;
+      color: var(--ink-color);
+      font-family: 'Kalam', 'Charm', cursive;
+      min-height: 100vh;
+      padding-bottom: 50px;
+    }
+
+    /* Navbar สไตล์หน้าปกสมุดหนังโบราณ */
+    .navbar {
+      background-color: var(--dark-leather) !important;
+      border-bottom: 2px solid var(--gold-accent);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    }
+
+    .navbar-brand {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gold-accent) !important;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+    }
+
+    /* ตราสัญลักษณ์ออนไลน์ */
     .online-badge {
       position: fixed;
       bottom: 20px;
@@ -19,62 +55,198 @@
       z-index: 1000;
     }
 
-    .post-card {
-      margin-bottom: 2rem;
+    .online-badge .badge {
+      background: var(--dark-leather) !important;
+      color: var(--gold-accent) !important;
+      border: 1px solid var(--gold-accent);
+      font-family: 'Cinzel', serif;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     }
 
+    /* ตัวสมุด / การ์ดบทความ */
+    .post-card, #adminPanel {
+      background: var(--parchment-bg);
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.05) 100%),
+        linear-gradient(to right, rgba(0,0,0,0.05) 0%, transparent 5%, transparent 95%, rgba(0,0,0,0.05) 100%);
+      border: 1px solid #b89b5e;
+      border-radius: 4px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(139, 90, 43, 0.15);
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    /* สันสมุดตรงกลาง */
+    .post-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+      pointer-events: none;
+    }
+
+    h3.card-title, h5 {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: #2b1810;
+      border-bottom: 1px dashed var(--gold-accent);
+      padding-bottom: 8px;
+    }
+
+    .card-text {
+      font-size: 1.25rem;
+      line-height: 1.8;
+      color: var(--ink-color);
+    }
+
+    /* ช่องคอมเมนต์สไตล์หมึกทอม ริดเดิล */
     .comment-box {
-      background: #f1f3f5;
-      border-radius: 8px;
-      padding: 12px;
-      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.03);
+      border-left: 3px solid var(--riddle-ink);
+      border-radius: 0;
+      padding: 12px 16px;
+      margin-top: 14px;
+      animation: inkAbsorb 2.5s ease-in-out forwards;
+    }
+
+    .comment-box.riddle-response {
+      color: var(--riddle-ink);
+      font-weight: 700;
+    }
+
+    .comment-box strong {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+    }
+
+    /* เอฟเฟกต์หมึกซึมลงกระดาษ */
+    @keyframes inkAbsorb {
+      0% {
+        opacity: 0;
+        filter: blur(4px);
+        transform: translateY(-2px);
+      }
+      50% {
+        opacity: 0.8;
+        filter: blur(1px);
+      }
+      100% {
+        opacity: 1;
+        filter: blur(0);
+      }
+    }
+
+    /* ฟอร์มและอินพุต */
+    .form-control {
+      background-color: rgba(255, 255, 255, 0.4);
+      border: 1px solid #aa8c55;
+      color: var(--ink-color);
+      font-family: 'Kalam', cursive;
+      font-size: 1.1rem;
+    }
+
+    .form-control:focus {
+      background-color: rgba(255, 255, 255, 0.7);
+      border-color: var(--gold-accent);
+      box-shadow: 0 0 8px rgba(197, 160, 89, 0.5);
+      color: var(--ink-color);
+    }
+
+    .form-control::placeholder {
+      color: #7a6851;
+      font-style: italic;
+    }
+
+    /* ปุ่มกด */
+    .btn-primary, .btn-success {
+      background-color: var(--dark-leather);
+      border-color: var(--gold-accent);
+      color: var(--gold-accent);
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover, .btn-success:hover {
+      background-color: var(--gold-accent);
+      border-color: var(--dark-leather);
+      color: var(--dark-leather);
+      box-shadow: 0 0 10px rgba(197, 160, 89, 0.6);
+    }
+
+    .btn-outline-primary {
+      color: var(--dark-leather);
+      border-color: var(--dark-leather);
+      font-family: 'Cinzel', serif;
+    }
+
+    .btn-outline-primary:hover {
+      background-color: var(--dark-leather);
+      color: var(--gold-accent);
+    }
+
+    /* Modal ปรับแต่งสไตล์มนตร์ดำ */
+    .modal-content {
+      background-color: var(--dark-leather);
+      border: 1px solid var(--gold-accent);
+      color: var(--gold-accent);
+      font-family: 'Cinzel', serif;
+    }
+
+    .modal-header {
+      border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+    }
+
+    .modal-footer {
+      border-top: 1px solid rgba(197, 160, 89, 0.3);
     }
   </style>
 </head>
 
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
-      <a class="navbar-brand" href="#">My Decent Blog</a>
+      <a class="navbar-brand" href="#">📖 T. M. RIDDLE'S DIARY</a>
       <div>
-        <button class="btn btn-outline-light btn-sm d-none" id="logoutBtn" onclick="handleLogout()">Logout</button>
+        <button class="btn btn-outline-light btn-sm d-none" id="logoutBtn" onclick="handleLogout()">ปิดสมุด (Logout)</button>
         <button class="btn btn-outline-light btn-sm" id="authBtn" data-bs-toggle="modal"
-          data-bs-target="#loginModal">Owner Login</button>
+          data-bs-target="#loginModal">สลักชื่อเจ้าของ (Owner)</button>
       </div>
     </div>
   </nav>
 
   <div class="online-badge">
-    <span class="badge rounded-pill bg-success p-2 fs-6 shadow">
-      🟢 ออนไลน์อยู่: <span id="onlineCount">1</span> คน
+    <span class="badge rounded-pill p-2 fs-6">
+      ✒️ ผู้เปิดอ่านสมุด: <span id="onlineCount">1</span> คน
     </span>
   </div>
 
-  <div class="container my-4">
-    <div id="adminPanel" class="card p-3 mb-4 d-none border-primary shadow-sm">
-      <h5 class="card-title text-primary">จัดการบทความ (Owner Panel)</h5>
+  <div class="container my-4" style="max-width: 800px;">
+    <div id="adminPanel" class="card p-4 mb-4 d-none">
+      <h5 class="card-title">เขียนข้อความลงบนสมุด (Owner Panel)</h5>
       <div class="mb-2">
-        <input type="text" id="postTitle" class="form-control" placeholder="หัวข้อบทความ">
+        <input type="text" id="postTitle" class="form-control" placeholder="หัวเรื่องข้อความ...">
       </div>
       <div class="mb-2">
-        <textarea id="postContent" class="form-control" rows="3" placeholder="เนื้อหาบทความ..."></textarea>
+        <textarea id="postContent" class="form-control" rows="3" placeholder="จรดปลายปากกาเขียนความลับของคุณที่นี่..."></textarea>
       </div>
       <div class="d-flex justify-content-between">
-        <button class="btn btn-primary btn-sm" onclick="createPost()">เผยแพร่บทความ</button>
+        <button class="btn btn-primary btn-sm" onclick="createPost()">หยดหมึกลงกระดาษ</button>
         <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
-          data-bs-target="#changePassModal">เปลี่ยนรหัสผ่าน</button>
+          data-bs-target="#changePassModal">เปลี่ยนคาถาผ่านทาง</button>
       </div>
     </div>
 
     <div id="postsContainer"></div>
   </div>
 
+  <!-- Modal เข้าสู่ระบบ -->
   <div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">เข้าสู่ระบบเจ้าของบล็อก</h5>
+          <h5 class="modal-title">ยืนยันตัวตนผู้ครอบครองสมุด</h5>
         </div>
         <div class="modal-body">
           <div id="loginError" class="alert alert-danger d-none py-2"></div>
@@ -82,17 +254,18 @@
           <input type="password" id="loginPass" class="form-control mb-2" placeholder="Password" autocomplete="current-password">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="loginSubmitBtn" onclick="handleLogin()">เข้าสู่ระบบ</button>
+          <button type="button" class="btn btn-primary" id="loginSubmitBtn" onclick="handleLogin()">เปิดสมุด</button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Modal เปลี่ยนรหัสผ่าน -->
   <div class="modal fade" id="changePassModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">เปลี่ยนรหัสผ่าน Admin</h5>
+          <h5 class="modal-title">เปลี่ยนคำสาปผ่านทาง (Password)</h5>
         </div>
         <div class="modal-body">
           <div id="changePassError" class="alert alert-danger d-none py-2"></div>
@@ -111,19 +284,15 @@
     import { WebsocketProvider } from 'https://esm.sh/y-websocket@1.5'
     import { IndexeddbPersistence } from 'https://esm.sh/y-indexeddb@9'
 
-    // 1. ตั้งค่า Yjs, IndexedDB และ y-websocket
     const doc = new Y.Doc();
-
     const provider = new WebsocketProvider(
       'wss://dearai.kaminpos.xyz',
       'my-decentralized-blog-room',
       doc
     );
-
     const persistence = new IndexeddbPersistence('my-decentralized-blog-db', doc);
     const yPosts = doc.getArray('posts');
 
-    // 2. เช็คสถานะ login กับ server ตอนโหลดหน้า (แทนการอ่านจาก localStorage)
     async function checkSession() {
       try {
         const res = await fetch('/api/session');
@@ -142,13 +311,11 @@
 
     checkSession();
 
-    // 3. แสดงจำนวนผู้ใช้งานที่กำลังออนไลน์ (Awareness)
     provider.awareness.on('change', () => {
       const states = Array.from(provider.awareness.getStates().keys());
       document.getElementById('onlineCount').innerText = states.length;
     });
 
-    // 4. Render เมื่อข้อมูลเปลี่ยนหรือโหลดสำเร็จ
     yPosts.observeDeep(() => {
       renderPosts();
     });
@@ -164,26 +331,29 @@
 
       yPosts.toArray().forEach((post, index) => {
         const postCard = document.createElement('div');
-        postCard.className = 'card post-card shadow-sm';
+        postCard.className = 'card post-card p-3';
 
-        let commentsHTML = (post.comments || []).map(c => `
-          <div class="comment-box">
-            <strong>${escapeHtml(c.author)}</strong> <small class="text-muted">• ${c.date}</small>
-            <p class="mb-0 mt-1">${escapeHtml(c.text)}</p>
-          </div>
-        `).join('');
+        let commentsHTML = (post.comments || []).map(c => {
+          const isRiddle = c.author.includes('Tom Riddle');
+          return `
+            <div class="comment-box ${isRiddle ? 'riddle-response' : ''}">
+              <strong>${escapeHtml(c.author)}</strong> <small class="text-muted">• ${c.date}</small>
+              <p class="mb-0 mt-1">${escapeHtml(c.text)}</p>
+            </div>
+          `;
+        }).join('');
 
         postCard.innerHTML = `
           <div class="card-body">
             <h3 class="card-title">${escapeHtml(post.title)}</h3>
             <p class="card-text">${escapeHtml(post.content)}</p>
-            <hr>
-            <h5>ความคิดเห็น</h5>
-            <div class="mb-3">${commentsHTML || '<small class="text-muted">ยังไม่มีความคิดเห็น</small>'}</div>
+            <hr style="border-color: var(--gold-accent);">
+            <h5>ข้อความตอบกลับจากสมุดบันทึก</h5>
+            <div class="mb-3">${commentsHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
             <div class="input-group mb-3">
-              <input type="text" id="author-${index}" class="form-control" placeholder="ชื่อของคุณ" style="max-width: 150px;">
-              <input type="text" id="input-${index}" class="form-control" placeholder="เขียนความคิดเห็น...">
-              <button class="btn btn-outline-primary" onclick="addComment(${index})">ส่ง</button>
+              <input type="text" id="author-${index}" class="form-control" placeholder="นามของคุณ" style="max-width: 160px;">
+              <input type="text" id="input-${index}" class="form-control" placeholder="เขียนตอบกลับทอม ริดเดิล...">
+              <button class="btn btn-outline-primary" onclick="addComment(${index})">สื่อสาร</button>
             </div>
           </div>
         `;
@@ -191,11 +361,10 @@
       });
     };
 
-    // 5. ฟังก์ชันเพิ่มบทความและคอมเมนต์
     window.createPost = function () {
       const title = document.getElementById('postTitle').value;
       const content = document.getElementById('postContent').value;
-      if (!title || !content) return alert('กรอกข้อมูลให้ครบถ้วน');
+      if (!title || !content) return alert('กรุณาจรดข้อความให้ครบถ้วน');
 
       yPosts.push([{
         id: Date.now(),
@@ -213,7 +382,7 @@
     window.addComment = function (postIndex) {
       const authorInput = document.getElementById(`author-${postIndex}`);
       const textInput = document.getElementById(`input-${postIndex}`);
-      const author = authorInput.value.trim() || 'ผู้เยี่ยมชม';
+      const author = authorInput.value.trim() || 'ผู้เขียนผู้ลึกลับ';
       const text = textInput.value.trim();
 
       if (!text) return;
@@ -226,11 +395,15 @@
         date: new Date().toLocaleTimeString()
       });
 
+      // ลบสถานะ AI เพื่อให้ Tom Riddle ตอบกลับข้อความใหม่ทันที
+      targetPost.lastAICommentDate = null;
+
       yPosts.delete(postIndex, 1);
       yPosts.insert(postIndex, [targetPost]);
+
+      checkAndTriggerAIComments();
     };
 
-    // 6. ระบบยืนยันตัวตน - เรียก Cloudflare Function ฝั่ง server แทนการเช็คใน localStorage
     window.handleLogin = async function () {
       const u = document.getElementById('loginUser').value;
       const p = document.getElementById('loginPass').value;
@@ -249,7 +422,7 @@
         const data = await res.json();
 
         if (!res.ok) {
-          errorBox.textContent = data.error || 'เข้าสู่ระบบไม่สำเร็จ';
+          errorBox.textContent = data.error || 'การยืนยันตัวตนล้มเหลว';
           errorBox.classList.remove('d-none');
           return;
         }
@@ -259,7 +432,7 @@
         document.getElementById('loginPass').value = '';
         bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
       } catch (e) {
-        errorBox.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+        errorBox.textContent = 'เกิดข้อผิดพลาดทางเวทมนตร์ในการเชื่อมต่อ';
         errorBox.classList.remove('d-none');
       } finally {
         btn.disabled = false;
@@ -292,12 +465,12 @@
         const data = await res.json();
 
         if (!res.ok) {
-          errorBox.textContent = data.error || 'เปลี่ยนรหัสผ่านไม่สำเร็จ';
+          errorBox.textContent = data.error || 'ไม่สามารถเปลี่ยนคาถาผ่านทางได้';
           errorBox.classList.remove('d-none');
           return;
         }
 
-        alert('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+        alert('เปลี่ยนคาถาผ่านทางเรียบร้อยแล้ว');
         document.getElementById('newPass').value = '';
         bootstrap.Modal.getInstance(document.getElementById('changePassModal')).hide();
       } catch (e) {
@@ -308,22 +481,22 @@
       }
     };
 
-    // 7. การเชื่อมต่อ Cloudflare Pages Function เพื่อรับคอมเมนต์จาก AI
-    const AI_BOT_NAMES = ['สมชาย สายอ่าน', 'กูรูวรรณกรรม', 'นักคิดเมืองกรุง', 'สายซุ่มอ่าน', 'ผู้ท่องโลกกว้าง', 'แมวเก้าชีวิต', 'หนุ่มเมืองกรุง', 'สาวน้อยบนยอดดอย', 'นักเวทย์จากราชสำนักหลวง'];
-
+    // ส่ง Prompt กำหนดคาแรคเตอร์ Tom Riddle (16 ปี)
     async function queryHuggingFace(promptText) {
+      const riddlePrompt = `คุณคือ Tom Marvolo Riddle วัย 16 ปี (นักเรียนพรีเฟกต์ฮอกวอตส์) ความทรงจำที่ถูกบันทึกไว้ในสมุดบันทึกเล่มนี้ จงตอบกลับด้วยท่าทีสุภาพ ฉลาด สุขุม แต่แฝงความเจ้าเล่ห์และชักจูงอย่างแนบเนียน: "${promptText}"`;
+
       const response = await fetch("/api/ai-comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: promptText })
+        body: JSON.stringify({ content: riddlePrompt })
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch AI comment from Serverless Function");
+        throw new Error("Failed to fetch AI comment");
       }
 
       const result = await response.json();
-      return result[0]?.generated_text || "เป็นบทความที่น่าสนใจมากครับ!";
+      return result[0]?.generated_text || "ฉันเห็นความปรารถนาในใจของเธอ... เล่าให้ฉันฟังมากกว่านี้สิ";
     }
 
     async function checkAndTriggerAIComments() {
@@ -335,12 +508,17 @@
 
         if (post.lastAICommentDate !== today) {
           try {
-            const rawText = await queryHuggingFace(post.content);
+            // เอาข้อความล่าสุดในบทความหรือคอมเมนต์ล่าสุดมาประมวลผล
+            const lastMessage = post.comments.length > 0 
+              ? post.comments[post.comments.length - 1].text 
+              : post.content;
+
+            const rawText = await queryHuggingFace(lastMessage);
             const cleanText = rawText.replace(/\[\/?INST\]/g, '').split('\n').pop();
-            const randomName = AI_BOT_NAMES[Math.floor(Math.random() * AI_BOT_NAMES.length)] + " 🤖";
+            const botName = "Tom Marvolo Riddle ✒️";
 
             post.comments.push({
-              author: randomName,
+              author: botName,
               text: cleanText,
               date: new Date().toLocaleTimeString()
             });
@@ -349,7 +527,7 @@
             yPosts.delete(i, 1);
             yPosts.insert(i, [post]);
           } catch (err) {
-            console.error("AI Comment Error:", err);
+            console.error("Tom Riddle Memory Error:", err);
           }
         }
       }
@@ -360,22 +538,20 @@
     }
 
     provider.on('status', event => {
-      console.log('WebRTC Status:', event.status);
-
       let logBox = document.getElementById('debug-status');
       if (!logBox) {
         logBox = document.createElement('div');
         logBox.id = 'debug-status';
-        logBox.style = 'position:fixed; top:10px; left:10px; background:rgba(0,0,0,0.8); color:#fff; padding:5px 10px; border-radius:5px; font-size:12px; z-index:9999;';
+        logBox.style = 'position:fixed; top:10px; left:10px; background:rgba(20,17,15,0.9); color:#c5a059; padding:5px 10px; border:1px solid #c5a059; border-radius:5px; font-size:12px; font-family:Cinzel, serif; z-index:9999;';
         document.body.appendChild(logBox);
       }
 
       if (event.status === 'connected') {
-        logBox.innerHTML = '🟢 WS: Connected';
-        logBox.style.color = '#00ff00';
+        logBox.innerHTML = '✨ สันธานเวท: เชื่อมต่อสมุดแล้ว';
+        logBox.style.color = '#76ba99';
       } else {
-        logBox.innerHTML = '🔴 WS: Disconnected';
-        logBox.style.color = '#ff4444';
+        logBox.innerHTML = '⚡ สันธานเวท: ขาดการเชื่อมต่อ';
+        logBox.style.color = '#ac4747';
       }
     });
   </script>
