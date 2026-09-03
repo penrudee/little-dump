@@ -134,6 +134,45 @@
       letter-spacing: 1px;
     }
 
+    /* คอมเมนต์ (คำตอบของ Tom Riddle) ที่ยังรอเจ้าของอนุมัติก่อนเผยแพร่ */
+    .comment-box.comment-pending {
+      background: rgba(197, 160, 89, 0.18);
+      border-left: 3px dashed var(--gold-accent);
+    }
+
+    .pending-section {
+      border-top: 2px dashed var(--gold-accent);
+      margin-top: 14px;
+      padding-top: 10px;
+    }
+
+    .pending-section h6 {
+      font-family: 'Cinzel', serif;
+      color: #6b4e2e;
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 8px;
+    }
+
+    .like-btn {
+      border: none;
+      background: transparent;
+      color: var(--link-color);
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      cursor: pointer;
+    }
+
+    .like-btn:hover {
+      color: #000;
+      text-decoration: underline;
+    }
+
+    .riddle-response .like-btn {
+      color: var(--riddle-ink);
+    }
+
     @keyframes inkAbsorb {
       0% { opacity: 0; filter: blur(3px); }
       100% { opacity: 1; filter: blur(0); }
@@ -391,6 +430,37 @@
       });
     }
 
+    // สร้าง markup ของคอมเมนต์ 1 รายการ (ใช้ทั้งกับคอมเมนต์ที่แสดงแล้วและที่รออนุมัติ)
+    function renderCommentBox(postId, cIndex, c, pending) {
+      const isRiddle = !!c.isAI;
+      const likes = c.likes || 0;
+      const pendingBadge = pending ? '<span class="badge bg-warning text-dark ms-1">รอการอนุมัติ</span>' : '';
+
+      const approveBtn = (pending && isLoggedInState)
+        ? `<button class="btn btn-outline-success btn-action-sm me-1" onclick="approveComment(${postId}, ${cIndex})">✅ อนุมัติ</button>`
+        : '';
+
+      const deleteCommentBtn = isLoggedInState
+        ? `<button class="btn btn-outline-danger btn-action-sm float-end" onclick="deleteComment(${postId}, ${cIndex})">ลบ</button>`
+        : '';
+
+      const likeBtn = !pending
+        ? `<button class="like-btn" onclick="likeComment(${postId}, ${cIndex})">🖤 ถูกใจ (${likes})</button>`
+        : '';
+
+      return `
+        <div class="comment-box ${isRiddle ? 'riddle-response' : ''} ${pending ? 'comment-pending' : ''}">
+          ${deleteCommentBtn}
+          <strong>${escapeHtml(c.author)}</strong> <small class="text-muted">• ${c.date}</small>${pendingBadge}
+          <p class="mb-1 mt-1">${autoLinkify(c.text)}</p>
+          <div class="d-flex align-items-center gap-2">
+            ${likeBtn}
+            ${approveBtn}
+          </div>
+        </div>
+      `;
+    }
+
     window.renderPosts = function () {
       const container = document.getElementById('postsContainer');
       container.innerHTML = '';
@@ -405,21 +475,25 @@
         postCard.className = 'card post-card p-3';
         postCard.id = `post-${postId}`;
 
-        let commentsHTML = (post.comments || []).map((c, cIndex) => {
-          const isRiddle = c.author.includes('Tom Riddle');
-          // ส่ง postId และ cIndex เข้าไปหาตำแหน่งล่าสุดเมื่อกดลบ
-          const deleteCommentBtn = isLoggedInState 
-            ? `<button class="btn btn-outline-danger btn-action-sm float-end" onclick="deleteComment(${postId}, ${cIndex})">ลบ</button>` 
-            : '';
+        const comments = post.comments || [];
 
-          return `
-            <div class="comment-box ${isRiddle ? 'riddle-response' : ''}">
-              ${deleteCommentBtn}
-              <strong>${escapeHtml(c.author)}</strong> <small class="text-muted">• ${c.date}</small>
-              <p class="mb-0 mt-1">${autoLinkify(c.text)}</p>
-            </div>
-          `;
-        }).join('');
+        // คอมเมนต์ของเจ้าของแสดงทันที ส่วนคำตอบของ Tom Riddle (AI) ต้องรอเจ้าของอนุมัติก่อน
+        // (คอมเมนต์เก่าที่ไม่มีฟิลด์ approved จะถือว่าอนุมัติแล้ว เพื่อไม่ให้ข้อมูลเดิมหายไป)
+        const visibleHTML = comments
+          .map((c, cIndex) => ({ c, cIndex }))
+          .filter(({ c }) => c.approved !== false)
+          .map(({ c, cIndex }) => renderCommentBox(postId, cIndex, c, false))
+          .join('');
+
+        const pendingItems = comments
+          .map((c, cIndex) => ({ c, cIndex }))
+          .filter(({ c }) => c.approved === false);
+
+        const pendingHTML = (isLoggedInState && pendingItems.length > 0) ? `
+          <div class="pending-section">
+            <h6>คำตอบจาก Tom Riddle ที่รอการอนุมัติ (${pendingItems.length})</h6>
+            ${pendingItems.map(({ c, cIndex }) => renderCommentBox(postId, cIndex, c, true)).join('')}
+          </div>` : '';
 
         const disabledAttr = isLoggedInState ? '' : 'disabled';
         const placeholderAuthor = isLoggedInState ? 'นามของคุณ' : 'ต้องเปิดสมุดก่อน';
@@ -439,9 +513,11 @@
             <button class="btn btn-outline-primary btn-share-sm float-end me-1" onclick="sharePost(${postId})">🔗 แชร์โพสต์นี้</button>
             <h3 class="card-title">${escapeHtml(post.title)}</h3>
             <p class="card-text">${autoLinkify(post.content)}</p>
+            <button class="like-btn" onclick="likePost(${postId})">🖤 ถูกใจข้อความนี้ (${post.likes || 0})</button>
             <hr style="border-color: var(--gold-accent);">
             <h5>ข้อความตอบกลับจากสมุดบันทึก</h5>
-            <div class="mb-3">${commentsHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
+            <div class="mb-3">${visibleHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
+            ${pendingHTML}
             <div class="input-group mb-3">
               <input type="text" id="author-${postId}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;" ${disabledAttr}>
               <input type="text" id="input-${postId}" class="form-control" placeholder="${placeholderText}" ${disabledAttr}>
@@ -548,6 +624,48 @@
       }
     };
 
+    // เจ้าของกดอนุมัติคำตอบของ Tom Riddle (AI) ให้แสดงต่อสาธารณะ
+    window.approveComment = function (postId, commentIndex) {
+      if (!isLoggedInState) return;
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return;
+
+      const targetPost = yPosts.get(index);
+      if (!targetPost.comments || !targetPost.comments[commentIndex]) return;
+      targetPost.comments[commentIndex].approved = true;
+
+      yPosts.delete(index, 1);
+      yPosts.insert(index, [targetPost]);
+    };
+
+    // กดถูกใจข้อความในไดอารี
+    window.likePost = function (postId) {
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return;
+
+      const targetPost = yPosts.get(index);
+      targetPost.likes = (targetPost.likes || 0) + 1;
+
+      yPosts.delete(index, 1);
+      yPosts.insert(index, [targetPost]);
+    };
+
+    // กดถูกใจคอมเมนต์ (บทสนทนาระหว่างเจ้าของกับ Tom Riddle)
+    window.likeComment = function (postId, commentIndex) {
+      const index = yPosts.toArray().findIndex(p => p.id === postId);
+      if (index === -1) return;
+
+      const targetPost = yPosts.get(index);
+      if (!targetPost.comments || !targetPost.comments[commentIndex]) return;
+
+      const c = targetPost.comments[commentIndex];
+      if (c.approved === false) return; // กันไลค์คอมเมนต์ที่ยังไม่อนุมัติ
+      c.likes = (c.likes || 0) + 1;
+
+      yPosts.delete(index, 1);
+      yPosts.insert(index, [targetPost]);
+    };
+
     window.createPost = function () {
       const title = document.getElementById('postTitle').value;
       const content = document.getElementById('postContent').value;
@@ -558,6 +676,7 @@
         title,
         content,
         comments: [],
+        likes: 0,
         lastAICommentDate: null
       }]);
 
@@ -577,7 +696,7 @@
 
       const authorInput = document.getElementById(`author-${postId}`);
       const textInput = document.getElementById(`input-${postId}`);
-      const author = authorInput.value.trim() || 'ผู้เขียนผู้ลึกลับ';
+      const author = authorInput.value.trim() || 'ผู้เขียนลึกลับ';
       const text = textInput.value.trim();
 
       if (!text) return;
@@ -586,7 +705,10 @@
       targetPost.comments.push({
         author,
         text,
-        date: new Date().toLocaleTimeString()
+        date: new Date().toLocaleTimeString(),
+        approved: true, // ข้อความของเจ้าของสมุด (login แล้ว) แสดงได้ทันที ไม่ต้องรออนุมัติ
+        likes: 0,
+        isAI: false
       });
 
       targetPost.lastAICommentDate = null;
@@ -713,7 +835,10 @@
             post.comments.push({
               author: botName,
               text: cleanText || "ฉันเห็นความปรารถนาในใจของเธอ... เล่าให้ฉันฟังมากกว่านี้สิ",
-              date: new Date().toLocaleTimeString()
+              date: new Date().toLocaleTimeString(),
+              approved: false, // คำตอบของ Tom Riddle ต้องรอเจ้าของสมุดอนุมัติก่อนเผยแพร่
+              likes: 0,
+              isAI: true
             });
             post.lastAICommentDate = today;
 
