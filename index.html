@@ -96,6 +96,86 @@
       white-space: pre-wrap;
     }
 
+    /* สไตล์สำหรับเนื้อหาที่แปลงจาก Markdown ในโพส */
+    .card-text.markdown-body {
+      white-space: normal;
+    }
+
+    .card-text.markdown-body h1,
+    .card-text.markdown-body h2,
+    .card-text.markdown-body h3,
+    .card-text.markdown-body h4,
+    .card-text.markdown-body h5,
+    .card-text.markdown-body h6 {
+      font-family: 'Cinzel', serif;
+      color: #2b1810;
+      border-bottom: none;
+      margin-top: 0.6em;
+      margin-bottom: 0.4em;
+    }
+
+    .card-text.markdown-body p {
+      margin-bottom: 0.8em;
+    }
+
+    .card-text.markdown-body ul,
+    .card-text.markdown-body ol {
+      margin-bottom: 0.8em;
+      padding-left: 1.6em;
+    }
+
+    .card-text.markdown-body blockquote {
+      border-left: 3px solid var(--gold-accent);
+      margin: 0.8em 0;
+      padding: 0.2em 1em;
+      color: #4a3520;
+      font-style: italic;
+      background: rgba(0,0,0,0.03);
+    }
+
+    .card-text.markdown-body code {
+      background: rgba(0,0,0,0.08);
+      padding: 0.1em 0.4em;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+
+    .card-text.markdown-body pre {
+      background: rgba(0,0,0,0.08);
+      padding: 0.8em;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    .card-text.markdown-body pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .card-text.markdown-body img {
+      max-width: 100%;
+      border-radius: 4px;
+      margin: 0.5em 0;
+    }
+
+    .card-text.markdown-body hr {
+      border-color: var(--gold-accent);
+      opacity: 0.5;
+    }
+
+    .card-text.markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0.8em;
+    }
+
+    .card-text.markdown-body table th,
+    .card-text.markdown-body table td {
+      border: 1px solid #b89b5e;
+      padding: 0.4em 0.6em;
+    }
+
     /* สไตล์สำหรับลิงก์ */
     a.diary-link {
       color: var(--link-color);
@@ -292,7 +372,7 @@
         <input type="text" id="postTitle" class="form-control" placeholder="หัวเรื่องข้อความ...">
       </div>
       <div class="mb-2">
-        <textarea id="postContent" class="form-control" rows="3" placeholder="จรดปลายปากกาเขียนความลับของคุณที่นี่..."></textarea>
+        <textarea id="postContent" class="form-control" rows="3" placeholder="จรดปลายปากกาเขียนความลับของคุณที่นี่... (รองรับ Markdown)"></textarea>
       </div>
       <div class="d-flex justify-content-between">
         <button class="btn btn-primary btn-sm" onclick="createPost()">หยดหมึกลงกระดาษ</button>
@@ -368,6 +448,22 @@
     import * as Y from 'https://esm.sh/yjs@13'
     import { WebsocketProvider } from 'https://esm.sh/y-websocket@1.5'
     import { IndexeddbPersistence } from 'https://esm.sh/y-indexeddb@9'
+    import { marked } from 'https://esm.sh/marked@9'
+    import DOMPurify from 'https://esm.sh/dompurify@3'
+
+    // ตั้งค่าให้ลิงก์ที่แปลงจาก Markdown เปิดในแท็บใหม่และใช้สไตล์เดียวกับลิงก์อื่นในสมุด
+    const mdRenderer = new marked.Renderer();
+    mdRenderer.link = (href, title, text) => {
+      const safeHref = href || '#';
+      return `<a href="${safeHref}" class="diary-link" target="_blank" rel="noopener noreferrer"${title ? ` title="${title}"` : ''}>${text}</a>`;
+    };
+    marked.use({ renderer: mdRenderer, breaks: true });
+
+    // แปลงเนื้อหาโพสจาก Markdown เป็น HTML ที่ปลอดภัย (กัน XSS ด้วย DOMPurify)
+    function renderMarkdown(text) {
+      const html = marked.parse(text || '');
+      return DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel'] });
+    }
 
     const doc = new Y.Doc();
     const provider = new WebsocketProvider(
@@ -477,8 +573,8 @@
 
         const comments = post.comments || [];
 
-        // คอมเมนต์ที่อนุมัติแล้วแสดงทันที ส่วนคอมเมนต์ที่รออนุมัติ (คำตอบของ Tom Riddle
-        // หรือคอมเมนต์จากผู้เยี่ยมชมที่ไม่ได้ login) ต้องรอเจ้าของอนุมัติก่อน
+        // คอมเมนต์ที่อนุมัติแล้วแสดงทันที ส่วนคอมเมนต์ที่รออนุมัติ (คอมเมนต์จากผู้เยี่ยมชมที่ไม่ได้ login)
+        // ต้องรอเจ้าของอนุมัติก่อน
         // (คอมเมนต์เก่าที่ไม่มีฟิลด์ approved จะถือว่าอนุมัติแล้ว เพื่อไม่ให้ข้อมูลเดิมหายไป)
         const visibleHTML = comments
           .map((c, cIndex) => ({ c, cIndex }))
@@ -512,7 +608,7 @@
             ${postAdminControls}
             <button class="btn btn-outline-primary btn-share-sm float-end me-1" onclick="sharePost(${postId})">🔗 แชร์โพสต์นี้</button>
             <h3 class="card-title">${escapeHtml(post.title)}</h3>
-            <p class="card-text">${autoLinkify(post.content)}</p>
+            <div class="card-text markdown-body">${renderMarkdown(post.content)}</div>
             <button class="like-btn" onclick="likePost(${postId})">🖤 ถูกใจข้อความนี้ (${post.likes || 0})</button>
             <hr style="border-color: var(--gold-accent);">
             <h5>ข้อความตอบกลับจากสมุดบันทึก</h5>
@@ -624,7 +720,7 @@
       }
     };
 
-    // เจ้าของกดอนุมัติคำตอบของ Tom Riddle (AI) หรือคอมเมนต์จากผู้เยี่ยมชม ให้แสดงต่อสาธารณะ
+    // เจ้าของกดอนุมัติความเห็นจากผู้เยี่ยมชมที่ไม่ได้ login ให้แสดงต่อสาธารณะ
     window.approveComment = function (postId, commentIndex) {
       if (!isLoggedInState) return;
       const index = yPosts.toArray().findIndex(p => p.id === postId);
@@ -676,8 +772,7 @@
         title,
         content,
         comments: [],
-        likes: 0,
-        lastAICommentDate: null
+        likes: 0
       }]);
 
       document.getElementById('postTitle').value = '';
@@ -712,7 +807,6 @@
           isAI: false,
           isGuest: false
         });
-        targetPost.lastAICommentDate = null;
       } else {
         const author = authorRaw || 'บุคคลลึกลับ';
         targetPost.comments.push({
@@ -830,49 +924,49 @@
       return result[0]?.generated_text || "ฉันเห็นความปรารถนาในใจของเธอ... เล่าให้ฉันฟังมากกว่านี้สิ";
     }
 
+    // ให้ Tom Riddle (AI) ตอบกลับทุกครั้งที่เจ้าของสมุดโพสหรือคอมเมนต์ใหม่
+    // (ไม่จำกัดแค่วันละครั้งอีกต่อไป) โดยคำตอบของ AI จะเผยแพร่ทันทีไม่ต้องรออนุมัติ
     async function checkAndTriggerAIComments() {
-      const today = new Date().toISOString().split('T')[0];
       const postsArray = yPosts.toArray();
 
       for (let i = 0; i < postsArray.length; i++) {
         const post = postsArray[i];
 
-        // ถ้าข้อความล่าสุดเป็นคอมเมนต์จากบุคคลลึกลับ (ผู้เยี่ยมชมที่ไม่ได้ login)
-        // จะไม่ให้ Tom Riddle (AI) ตอบกลับ
         const lastComment = post.comments && post.comments.length > 0
           ? post.comments[post.comments.length - 1]
           : null;
+
+        // ถ้าข้อความล่าสุดเป็นคอมเมนต์จากบุคคลลึกลับ (ผู้เยี่ยมชมที่ไม่ได้ login)
+        // จะไม่ให้ Tom Riddle (AI) ตอบกลับ
         if (lastComment && lastComment.isGuest) continue;
 
-        if (post.lastAICommentDate !== today) {
-          try {
-            const lastMessage = post.comments.length > 0 
-              ? post.comments[post.comments.length - 1].text 
-              : post.content;
+        // ถ้า Tom Riddle ตอบกลับข้อความล่าสุดไปแล้ว ก็ไม่ต้องตอบซ้ำอีก
+        if (lastComment && lastComment.isAI) continue;
 
-            const rawText = await queryHuggingFace(lastMessage);
-            const cleanText = rawText
-              .replace(/\[\/?INST\]/g, '')
-              .replace(/<s>|<\/s>/g, '')
-              .trim();
+        try {
+          const lastMessage = lastComment ? lastComment.text : post.content;
 
-            const botName = "Tom Marvolo Riddle ✒️";
+          const rawText = await queryHuggingFace(lastMessage);
+          const cleanText = rawText
+            .replace(/\[\/?INST\]/g, '')
+            .replace(/<s>|<\/s>/g, '')
+            .trim();
 
-            post.comments.push({
-              author: botName,
-              text: cleanText || "ฉันเห็นความปรารถนาในใจของเธอ... เล่าให้ฉันฟังมากกว่านี้สิ",
-              date: new Date().toLocaleTimeString(),
-              approved: false, // คำตอบของ Tom Riddle ต้องรอเจ้าของสมุดอนุมัติก่อนเผยแพร่
-              likes: 0,
-              isAI: true
-            });
-            post.lastAICommentDate = today;
+          const botName = "Tom Marvolo Riddle ✒️";
 
-            yPosts.delete(i, 1);
-            yPosts.insert(i, [post]);
-          } catch (err) {
-            console.error("Tom Riddle Memory Error:", err);
-          }
+          post.comments.push({
+            author: botName,
+            text: cleanText || "ฉันเห็นความปรารถนาในใจของเธอ... เล่าให้ฉันฟังมากกว่านี้สิ",
+            date: new Date().toLocaleTimeString(),
+            approved: true, // คำตอบของ Tom Riddle เผยแพร่ได้ทันที ไม่ต้องรอเจ้าของสมุดอนุมัติ
+            likes: 0,
+            isAI: true
+          });
+
+          yPosts.delete(i, 1);
+          yPosts.insert(i, [post]);
+        } catch (err) {
+          console.error("Tom Riddle Memory Error:", err);
         }
       }
     }
