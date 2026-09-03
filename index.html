@@ -477,7 +477,8 @@
 
         const comments = post.comments || [];
 
-        // คอมเมนต์ของเจ้าของแสดงทันที ส่วนคำตอบของ Tom Riddle (AI) ต้องรอเจ้าของอนุมัติก่อน
+        // คอมเมนต์ที่อนุมัติแล้วแสดงทันที ส่วนคอมเมนต์ที่รออนุมัติ (คำตอบของ Tom Riddle
+        // หรือคอมเมนต์จากผู้เยี่ยมชมที่ไม่ได้ login) ต้องรอเจ้าของอนุมัติก่อน
         // (คอมเมนต์เก่าที่ไม่มีฟิลด์ approved จะถือว่าอนุมัติแล้ว เพื่อไม่ให้ข้อมูลเดิมหายไป)
         const visibleHTML = comments
           .map((c, cIndex) => ({ c, cIndex }))
@@ -491,13 +492,12 @@
 
         const pendingHTML = (isLoggedInState && pendingItems.length > 0) ? `
           <div class="pending-section">
-            <h6>คำตอบจาก Tom Riddle ที่รอการอนุมัติ (${pendingItems.length})</h6>
+            <h6>ข้อความที่รอการอนุมัติ (${pendingItems.length})</h6>
             ${pendingItems.map(({ c, cIndex }) => renderCommentBox(postId, cIndex, c, true)).join('')}
           </div>` : '';
 
-        const disabledAttr = isLoggedInState ? '' : 'disabled';
-        const placeholderAuthor = isLoggedInState ? 'นามของคุณ' : 'ต้องเปิดสมุดก่อน';
-        const placeholderText = isLoggedInState ? 'เขียนตอบกลับทอม ริดเดิล...' : '🔒 กรุณาลงชื่อเข้าใช้ (Login) เพื่อจรดข้อความ...';
+        const placeholderAuthor = isLoggedInState ? 'นามของคุณ' : 'นามของคุณ (ผู้เยี่ยมชม)';
+        const placeholderText = isLoggedInState ? 'เขียนตอบกลับทอม ริดเดิล...' : 'เขียนความคิดเห็น (ต้องรอการอนุมัติก่อนเผยแพร่)...';
 
         // ใช้ postId อ้างอิงแทน index ในปุ่ม Action
         const postAdminControls = isLoggedInState ? `
@@ -519,9 +519,9 @@
             <div class="mb-3">${visibleHTML || '<small class="text-muted" style="font-style: italic;">กระดาษยังคงว่างเปล่า... รอคอยหมึกซึมผ่าน</small>'}</div>
             ${pendingHTML}
             <div class="input-group mb-3">
-              <input type="text" id="author-${postId}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;" ${disabledAttr}>
-              <input type="text" id="input-${postId}" class="form-control" placeholder="${placeholderText}" ${disabledAttr}>
-              <button class="btn btn-outline-primary" onclick="addComment(${postId})" ${disabledAttr}>สื่อสาร</button>
+              <input type="text" id="author-${postId}" class="form-control" placeholder="${placeholderAuthor}" style="max-width: 160px;">
+              <input type="text" id="input-${postId}" class="form-control" placeholder="${placeholderText}">
+              <button class="btn btn-outline-primary" onclick="addComment(${postId})">สื่อสาร</button>
             </div>
           </div>
         `;
@@ -624,7 +624,7 @@
       }
     };
 
-    // เจ้าของกดอนุมัติคำตอบของ Tom Riddle (AI) ให้แสดงต่อสาธารณะ
+    // เจ้าของกดอนุมัติคำตอบของ Tom Riddle (AI) หรือคอมเมนต์จากผู้เยี่ยมชม ให้แสดงต่อสาธารณะ
     window.approveComment = function (postId, commentIndex) {
       if (!isLoggedInState) return;
       const index = yPosts.toArray().findIndex(p => p.id === postId);
@@ -685,38 +685,57 @@
       checkAndTriggerAIComments();
     };
 
+    // เพิ่มคอมเมนต์: เจ้าของสมุด (login แล้ว) คอมเมนต์จะเผยแพร่ทันทีและกระตุ้นให้ AI ตอบกลับ
+    // ส่วนผู้เยี่ยมชม (บุคคลลึกลับ ที่ไม่ได้ login) คอมเมนต์จะถูกเก็บไว้รอเจ้าของอนุมัติก่อนเผยแพร่
+    // และจะไม่มีการตอบสนองกลับจาก AI
     window.addComment = async function (postId) {
-      if (!isLoggedInState) {
-        alert('เฉพาะผู้ที่สลักชื่อเจ้าของ (Login) แล้วเท่านั้นที่จะเขียนตอบกลับสมุดเล่มนี้ได้');
-        return;
-      }
-
       const index = yPosts.toArray().findIndex(p => p.id === postId);
       if (index === -1) return alert('โพสต์นี้ถูกลบไปแล้ว');
 
       const authorInput = document.getElementById(`author-${postId}`);
       const textInput = document.getElementById(`input-${postId}`);
-      const author = authorInput.value.trim() || 'ผู้เขียนลึกลับ';
+      const authorRaw = authorInput.value.trim();
       const text = textInput.value.trim();
 
       if (!text) return;
 
       const targetPost = yPosts.get(index);
-      targetPost.comments.push({
-        author,
-        text,
-        date: new Date().toLocaleTimeString(),
-        approved: true, // ข้อความของเจ้าของสมุด (login แล้ว) แสดงได้ทันที ไม่ต้องรออนุมัติ
-        likes: 0,
-        isAI: false
-      });
 
-      targetPost.lastAICommentDate = null;
+      if (isLoggedInState) {
+        const author = authorRaw || 'ผู้เขียนลึกลับ';
+        targetPost.comments.push({
+          author,
+          text,
+          date: new Date().toLocaleTimeString(),
+          approved: true, // ข้อความของเจ้าของสมุด (login แล้ว) แสดงได้ทันที ไม่ต้องรออนุมัติ
+          likes: 0,
+          isAI: false,
+          isGuest: false
+        });
+        targetPost.lastAICommentDate = null;
+      } else {
+        const author = authorRaw || 'บุคคลลึกลับ';
+        targetPost.comments.push({
+          author,
+          text,
+          date: new Date().toLocaleTimeString(),
+          approved: false, // คอมเมนต์จากผู้เยี่ยมชมต้องรอเจ้าของอนุมัติก่อนเผยแพร่
+          likes: 0,
+          isAI: false,
+          isGuest: true // คอมเมนต์จากบุคคลลึกลับ จะไม่ทริกเกอร์การตอบกลับจาก AI
+        });
+      }
 
       yPosts.delete(index, 1);
       yPosts.insert(index, [targetPost]);
 
-      checkAndTriggerAIComments();
+      authorInput.value = '';
+      textInput.value = '';
+
+      // ให้ AI ตอบกลับเฉพาะเมื่อเจ้าของสมุดเป็นผู้คอมเมนต์เท่านั้น
+      if (isLoggedInState) {
+        checkAndTriggerAIComments();
+      }
     };
 
     window.handleLogin = async function () {
@@ -817,6 +836,13 @@
 
       for (let i = 0; i < postsArray.length; i++) {
         const post = postsArray[i];
+
+        // ถ้าข้อความล่าสุดเป็นคอมเมนต์จากบุคคลลึกลับ (ผู้เยี่ยมชมที่ไม่ได้ login)
+        // จะไม่ให้ Tom Riddle (AI) ตอบกลับ
+        const lastComment = post.comments && post.comments.length > 0
+          ? post.comments[post.comments.length - 1]
+          : null;
+        if (lastComment && lastComment.isGuest) continue;
 
         if (post.lastAICommentDate !== today) {
           try {
