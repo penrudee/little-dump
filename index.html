@@ -921,6 +921,7 @@
       }
 
       const result = await response.json();
+      console.log("result from queryHuggingFace", result);
       return result[0]?.generated_text || "ฉันเห็นความปรารถนาในใจของเธอ... เล่าให้ฉันฟังมากกว่านี้สิ";
     }
 
